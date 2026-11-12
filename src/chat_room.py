@@ -20,7 +20,13 @@ from typing import Dict, List, Optional
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import DATA_DIR, MEMORY_DIR, TRADERS_CONFIG
 from src.llm_client import GLOBAL_LLM
-from src.fallback_corpus import TRADER_VOICES, generate_fallback_chat_reply
+from src.fallback_corpus import (
+    TRADER_INFO,
+    generate_intelligent_trader_responses,
+    generate_fallback_chat_reply,
+    load_accounts_data,
+    load_brief_data
+)
 from src.market_weather import fetch_city_weather
 from src.image_analyzer import GLOBAL_CHART_ANALYZER
 
@@ -216,26 +222,49 @@ class SevenPersonChatRoom:
             responder_ids = auto_responder_ids
 
         responses = []
+        # 优先检测是否有真实外部 LLM Key，若没有，直接执行硬核量化规则与真实账本研判引擎
+        if not GLOBAL_LLM.is_live_api_ready():
+            trader_replies = generate_intelligent_trader_responses(user_text, image_analysis_summary, auto_responder_ids)
+            for r in trader_replies:
+                resp_item = {
+                    "mode": "group",
+                    "trader_id": r["trader_id"],
+                    "trader_name": r["trader_name"],
+                    "style": r["style"],
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "reply": r["reply"]
+                }
+                self.append_chat_message(resp_item)
+                responses.append(resp_item)
+            return responses
+
+        # 若配置了外部大模型，将真实账本数据与大盘作为系统级上下文注入
+        accounts_data = load_accounts_data()
+        brief_data = load_brief_data()
+        context_str = f"真实持仓账本: {json.dumps(accounts_data, ensure_ascii=False)}\n今日大盘情绪: {brief_data.get('lean')} (分值 {brief_data.get('lean_score')})"
+
+        responses = []
         for t_id in responder_ids:
             cfg = TRADERS_CONFIG.get(t_id, {})
             name = cfg.get("name", t_id)
             style = cfg.get("style", "")
             t_mem = memories.get(t_id, {})
 
-            sys_prompt = f"""你是 HIGHLAND CAPITAL 七人群聊里的交易员【{name}】（{style}）。
+            sys_prompt = f"""你是 HIGHLAND CAPITAL 虚拟交易工作室交易员【{name}】（{style}）。
 你的长期记忆：备忘[{t_mem.get('self_note', '')}]，关注承诺[{t_mem.get('commitment', '')}]。
-当前环境：{env['scene_desc']}，天气：{env['weather_desc']} {env['temp']}°C。
+当前时间与环境：{env['scene_desc']}。
+【底层真实资产与行情背景】：
+{context_str}
 
-【群聊规则】
-1. 保持你的独特投资风格与性格特点；
-2. 允许对其他同事或用户的看法提出专业反驳、补充或适度调侃；
-3. 如果用户发了图表或走势截图，请重点从你的投资风格出发（如短线看形态突破，红利看防守支撑）直接点评；
-4. 不必拘泥客套，像真实的交易室同事一样直接；
-5. 不下实盘指令，80 字以内精炼表态。"""
+【分析准则】
+1. 严禁说空话、套话或万能废话！
+2. 如果用户问持仓，请直接报出你负责的具体标的名称、代码、成本、现价及浮盈，并给出下一步实操规划；
+3. 如果用户发了图表或问行情，结合你本人的投资哲学给出明确的多空研判、支撑位、阻力位和风控纪律；
+4. 语言专业干练，100 字以内直接输出。"""
 
-            query_prompt = f"群消息：{user_text}"
+            query_prompt = f"用户问：{user_text}"
             if image_analysis_summary:
-                query_prompt += f"\n[用户发送了一张走势/持仓图表，视觉识别结论: {image_analysis_summary}]"
+                query_prompt += f"\n[走势/截图视觉识别结论: {image_analysis_summary}]"
 
             messages = [
                 {"role": "system", "content": sys_prompt},
@@ -243,13 +272,7 @@ class SevenPersonChatRoom:
             ]
 
             def _fallback(trader_id=t_id):
-                base = generate_fallback_chat_reply(trader_id, user_text, env)
-                if image_analysis_summary:
-                    if trader_id == "trader_1":
-                        base = f"扫了一眼你发来的这张图：突破放量迹象有，但上方有均线压制。{base}"
-                    elif trader_id == "trader_3":
-                        base = f"这走势波动不小，我提醒一句：注意下方防御均线支撑，别在拉升尾声去接飞刀！{base}"
-                return base
+                return generate_fallback_chat_reply(trader_id, user_text, env)
 
             reply = GLOBAL_LLM.query(messages, fallback_fn=_fallback).strip()
             resp_item = {
