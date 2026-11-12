@@ -1,0 +1,104 @@
+[
+  {
+    "mode": "group",
+    "sender": "User",
+    "text": "今天早盘半导体涨了 2 个点，要不要追？",
+    "timestamp": "2026-11-12 14:02:06"
+  },
+  {
+    "mode": "group",
+    "trader_id": "trader_1",
+    "trader_name": "千里马",
+    "style": "成长进攻",
+    "timestamp": "2026-11-12 14:02:06",
+    "reply": "只要盈亏比合适，我愿意在右侧放量时拿底仓冲锋！"
+  },
+  {
+    "mode": "group",
+    "trader_id": "trader_3",
+    "trader_name": "磐石",
+    "style": "红利防御",
+    "timestamp": "2026-11-12 14:02:06",
+    "reply": "市场越是躁动，越要耐得住寂寞。稳住基本盘，时间是我们的朋友。"
+  },
+  {
+    "mode": "group_peek",
+    "trader_id": "trader_5",
+    "trader_name": "逆风",
+    "style": "逆向事件",
+    "timestamp": "2026-11-12 14:02:07",
+    "reply": "别迷信一致预期！每次市场觉得‘这次不一样’的时候，最后都一模一样。"
+  },
+  {
+    "mode": "group_peek",
+    "trader_id": "trader_2",
+    "trader_name": "天平",
+    "style": "均衡配置",
+    "timestamp": "2026-11-12 14:02:07",
+    "reply": "我赞同千里马的敏锐，但也提醒大家盯紧整体组合的最大回撤。均衡配置是穿越周期的压舱石。 （顺便看了一眼窗外，今天北京晴朗，气温才 11.0°C，盘面倒比天气还躁动一些。）"
+  },
+  {
+    "mode": "group_peek",
+    "trader_id": "trader_5",
+    "trader_name": "逆风",
+    "style": "逆向事件",
+    "timestamp": "2026-11-12 14:05:52",
+    "reply": "逆向不是蛮干，是要在利空充分消化、抛压枯竭后才出手。"
+  },
+  {
+    "mode": "group_peek",
+    "trader_id": "trader_2",
+    "trader_name": "天平",
+    "style": "均衡配置",
+    "timestamp": "2026-11-12 14:05:52",
+    "reply": "大家先别急着下定论。一边是成长方向在放量，另一边红利与消费也在支撑底盘，走极端反而容易两头挨打。"
+  },
+  {
+    "mode": "group",
+    "sender": "User",
+    "text": "今天半导体突破了，要不要买？",
+    "has_image": false,
+    "image_analysis": "",
+    "timestamp": "2026-11-12 20:35:26"
+  },
+  {
+    "mode": "group",
+    "trader_id": "trader_1",
+    "trader_name": "千里马",
+    "style": "成长进攻",
+    "timestamp": "2026-11-12 20:35:26",
+    "reply": "短线别被小打小闹的杂音带偏了节奏！盯紧分时成交量和龙头换手，没有量就是假突破！"
+  },
+  {
+    "mode": "group",
+    "trader_id": "trader_3",
+    "trader_name": "磐石",
+    "style": "红利防御",
+    "timestamp": "2026-11-12 20:35:26",
+    "reply": "市场越是躁动，越要耐得住寂寞。稳住基本盘，时间是我们的朋友。"
+  },
+  {
+    "mode": "group",
+    "sender": "User",
+    "text": "帮我看下这个走势形态",
+    "has_image": true,
+    "image_analysis": "【图表视觉解析】图像分辨率 300x150 (比例 2.0)。形态特征显示当前处于【震荡整理（多空博弈胶着）】。盘面研判：均线呈现纠缠收敛状态，方向尚未完全明朗，建议控制仓位等待右侧选择方向。",
+    "timestamp": "2026-11-12 20:35:48"
+  },
+  {
+    "mode": "group",
+    "trader_id": "trader_1",
+    "trader_name": "千里马",
+    "style": "成长进攻",
+    "timestamp": "2026-11-12 20:35:48",
+    "reply": "扫了一眼你发来的这张图：突破放量迹象有，但上方有均线压制。我赞同顺势而为，但如果成长赛道没出现合力共振，我宁可空仓等机会，也不想在横盘里磨损本金！"
+  },
+  {
+    "mode": "group",
+    "trader_id": "trader_3",
+    "trader_name": "磐石",
+    "style": "红利防御",
+    "timestamp": "2026-11-12 20:35:48",
+    "reply": "这走势波动不小，我提醒一句：注意下方防御均线支撑，别在拉升尾声去接飞刀！市场越是躁动，越要耐得住寂寞。稳住基本盘，时间是我们的朋友。"
+  }
+]

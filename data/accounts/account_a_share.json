@@ -1,0 +1,58 @@
+{
+  "account_id": "virtual_a_share",
+  "market": "A股",
+  "currency": "CNY",
+  "cash": 350000.0,
+  "initial_capital": 1000000.0,
+  "holdings": [
+    {
+      "symbol": "510880",
+      "name": "红利ETF",
+      "shares": 100000,
+      "cost_price": 3.12,
+      "current_price": 3.18,
+      "owner_trader": "trader_3",
+      "sector": "红利低波"
+    },
+    {
+      "symbol": "512480",
+      "name": "半导体ETF",
+      "shares": 80000,
+      "cost_price": 1.15,
+      "current_price": 1.28,
+      "owner_trader": "trader_1",
+      "sector": "成长科技"
+    },
+    {
+      "symbol": "512010",
+      "name": "医药ETF",
+      "shares": 120000,
+      "cost_price": 0.42,
+      "current_price": 0.45,
+      "owner_trader": "trader_4",
+      "sector": "消费医药"
+    },
+    {
+      "symbol": "512880",
+      "name": "证券ETF",
+      "shares": 100000,
+      "cost_price": 1.05,
+      "current_price": 1.12,
+      "owner_trader": "trader_2",
+      "sector": "大金融均衡"
+    }
+  ],
+  "trade_history": [
+    {
+      "timestamp": "2026-11-10 14:55:00",
+      "symbol": "512480",
+      "name": "半导体ETF",
+      "action": "BUY",
+      "shares": 20000,
+      "price": 1.18,
+      "trader": "trader_1",
+      "reason": "突破 20 日均线，成长风格进攻试仓"
+    }
+  ],
+  "updated_at": "2026-11-12 13:56:46"
+}

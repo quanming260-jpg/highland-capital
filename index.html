@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HIGHLAND CAPITAL · 3D 等距交易 Loft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #06080e;
+      --card-bg: rgba(11, 15, 26, 0.9);
+      --card-border: rgba(45, 60, 85, 0.7);
+      --primary: #00f0ff;
+      --accent-green: #00ff88;
+      --accent-red: #ff3366;
+      --accent-gold: #ffb800;
+      --accent-purple: #b537f2;
+      --text-main: #f0f4fc;
+      --text-muted: #8b9bb4;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Noto Sans SC', sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      font-family: var(--font-sans);
+      color: var(--text-main);
+    }
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    /* 顶部导航栏 */
+    .top-bar {
+      position: absolute;
+      top: 14px;
+      left: 18px;
+      right: 18px;
+      height: 52px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 10;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #00f0ff, #7000ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 16px;
+      color: #000;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+    }
+    .brand-title {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.8px;
+    }
+    .brand-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      font-family: var(--font-mono);
+    }
+    /* 城市切换 */
+    .city-group {
+      display: flex;
+      gap: 6px;
+    }
+    .city-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+      padding: 5px 11px;
+      border-radius: 7px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+    .city-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text-main);
+    }
+    .city-btn.active {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: var(--primary);
+      color: var(--primary);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+    }
+    /* 环境变量 */
+    .env-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+    .weather-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .market-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .market-open {
+      background: rgba(0, 255, 136, 0.15);
+      color: var(--accent-green);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+    }
+    .market-closed {
+      background: rgba(255, 51, 102, 0.15);
+      color: var(--accent-red);
+      border: 1px solid rgba(255, 51, 102, 0.3);
+    }
+    /* 右上视角控制器 */
+    .view-controls {
+      position: absolute;
+      top: 78px;
+      right: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      z-index: 10;
+    }
+    .view-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(10px);
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-radius: 7px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .view-btn:hover {
+      color: var(--text-main);
+      border-color: rgba(0, 240, 255, 0.5);
+    }
+    .view-btn.active {
+      background: rgba(0, 240, 255, 0.25);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    /* 底部状态条 */
+    .bottom-bar {
+      position: absolute;
+      bottom: 14px;
+      left: 18px;
+      right: 18px;
+      height: 48px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 10;
+      font-size: 12px;
+    }
+    .trader-status-pills {
+      display: flex;
+      gap: 10px;
+    }
+    .trader-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: 0.2s;
+    }
+    .trader-pill:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green);
+    }
+    .bottom-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .action-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .action-btn:hover {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: var(--primary);
+    }
+    /* 侧边交易员卡片抽屉 (点击小人弹出) */
+    .trader-drawer {
+      position: absolute;
+      top: 78px;
+      bottom: 72px;
+      right: -420px;
+      width: 380px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 14px;
+      padding: 22px;
+      z-index: 20;
+      transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: -10px 0 35px rgba(0, 0, 0, 0.65);
+      overflow-y: auto;
+    }
+    .trader-drawer.open {
+      right: 18px;
+    }
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+    .drawer-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .drawer-close:hover {
+      color: #fff;
+    }
+    .trader-title-box h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .trader-tag {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+    .diary-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #d1d9e6;
+    }
+    .diary-box h4 {
+      font-size: 11px;
+      color: var(--primary);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      font-family: var(--font-mono);
+      display: flex;
+      justify-content: space-between;
+    }
+    .chat-box-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chat-input-wrapper {
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-wrapper input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+    }
+    .chat-input-wrapper input:focus {
+      border-color: var(--primary);
+    }
+    .chat-send-btn {
+      background: var(--primary);
+      color: #000;
+      border: none;
+      padding: 0 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .chat-history-log {
+      max-height: 130px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .chat-bubble {
+      padding: 6px 10px;
+      border-radius: 6px;
+      max-width: 90%;
+      word-break: break-word;
+    }
+    .bubble-user {
+      align-self: flex-end;
+      background: rgba(0, 240, 255, 0.2);
+      color: #fff;
+    }
+    .bubble-trader {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.08);
+      color: #d8e2f0;
+    }
+    /* 七人群聊弹窗 */
+    .group-chat-window {
+      position: absolute;
+      top: 76px;
+      bottom: 70px;
+      left: 18px;
+      width: 420px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 14px;
+      padding: 18px;
+      z-index: 25;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 10px 0 35px rgba(0, 0, 0, 0.65);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+      transform: translateX(-460px);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .group-chat-window.open {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .chat-header-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .chat-mini-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .chat-mini-btn:hover {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: var(--primary);
+    }
+    .group-log-scroll {
+      flex: 1;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 12px;
+    }
+    .msg-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .msg-author {
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .msg-tag {
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+    }
+    .msg-bubble {
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.07);
+      line-height: 1.5;
+      color: #e2eaf5;
+      max-width: 95%;
+      word-break: break-word;
+    }
+    .msg-user {
+      align-self: flex-end;
+    }
+    .msg-user .msg-bubble {
+      background: rgba(0, 240, 255, 0.2);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      color: #fff;
+    }
+    .msg-thumb-img {
+      max-width: 180px;
+      max-height: 120px;
+      border-radius: 6px;
+      margin-top: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: block;
+    }
+    .image-preview-bar {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px dashed var(--primary);
+      font-size: 11px;
+    }
+    .image-preview-bar img {
+      width: 32px;
+      height: 32px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .group-input-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .input-row {
+      display: flex;
+      gap: 6px;
+    }
+    .input-row input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+    }
+    .input-row input:focus {
+      border-color: var(--primary);
+    }
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+      padding: 0 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-btn:hover {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: var(--primary);
+    }
+    /* 记忆库弹窗 */
+    .memory-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      width: 580px;
+      max-height: 80vh;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 14px;
+      padding: 22px;
+      z-index: 40;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+    .memory-modal.open {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    .memory-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .memory-card h5 {
+      font-size: 12px;
+      color: var(--primary);
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    #toast {
+      position: absolute;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 240, 255, 0.95);
+      color: #000;
+      font-weight: 600;
+      font-size: 12px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      z-index: 50;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
+    }
+    @media (max-width: 768px) {
+      .top-bar { padding: 0 8px; height: 46px; }
+      .brand-title { display: none; }
+      .city-btn { padding: 4px 6px; font-size: 11px; }
+      .weather-badge { font-size: 10px; }
+      .trader-drawer { width: 92%; }
+      .bottom-bar { font-size: 10px; }
+      .trader-status-pills { display: none; }
+    }
+  </style>
+
+  <!-- Three.js CDN (importmap) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://esm.sh/three@0.160.0",
+        "three/addons/": "https://esm.sh/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <!-- 顶部玻璃导航栏 -->
+  <div class="top-bar">
+    <div class="brand">
+      <div class="brand-logo">H</div>
+      <div class="brand-title">HIGHLAND CAPITAL</div>
+      <div class="brand-tag">3D LOFT</div>
+    </div>
+
+    <!-- 五座城市切换 -->
+    <div class="city-group">
+      <button class="city-btn active" data-city="new_york">🗽 纽约 (50F)</button>
+      <button class="city-btn" data-city="beijing">🏯 北京 (国贸)</button>
+      <button class="city-btn" data-city="washington">🏛️ 华盛顿</button>
+      <button class="city-btn" data-city="hangzhou">🌊 杭州 (西湖)</button>
+      <button class="city-btn" data-city="mulan">🌲 木兰 (江畔)</button>
+    </div>
+
+    <!-- 环境与大盘 -->
+    <div class="env-info">
+      <div class="weather-badge" id="weather-display">
+        <span>🌤️</span> <span id="weather-text">纽约 阴天 10°C</span>
+      </div>
+      <div class="market-badge market-open" id="market-display">美股 盘前</div>
+    </div>
+  </div>
+
+  <!-- 视角控制栏 -->
+  <div class="view-controls">
+    <button class="view-btn active" id="view-iso">📐 开放 Loft (等距)</button>
+    <button class="view-btn" id="view-radar">🛰️ 雷达俯视</button>
+    <button class="view-btn" id="view-close">🔍 紧凑工位</button>
+    <button class="view-btn" id="view-auto">🔄 自动漫游</button>
+  </div>
+
+  <!-- 七人交易室群聊浮窗 (支持文本、K线图表上传与粘贴、观点交锋) -->
+  <div class="group-chat-window" id="group-chat-window">
+    <div class="drawer-header">
+      <div class="trader-title-box">
+        <h3>💬 七人交易室群聊</h3>
+        <span class="trader-tag" style="background: rgba(0, 240, 255, 0.15); color: #00f0ff;">6位交易员 + 您</span>
+      </div>
+      <div class="chat-header-actions">
+        <button class="chat-mini-btn" id="btn-group-peek" title="让交易员自主发起内部观点交锋">👀 偷看模式</button>
+        <button class="chat-mini-btn" id="btn-group-clear" title="清空聊天记录">🧹</button>
+        <button class="drawer-close" id="btn-group-close">&times;</button>
+      </div>
+    </div>
+
+    <!-- 消息滚动区 -->
+    <div class="group-log-scroll" id="group-log-scroll">
+      <div class="msg-row">
+        <div class="msg-author" style="color: #00f0ff;">
+          <span>⚡ 千里马</span><span class="msg-tag" style="background: rgba(0,240,255,0.15); color:#00f0ff;">短线</span>
+        </div>
+        <div class="msg-bubble">各位好！今天盘前隔夜情绪偏多，科技成长方向催化不少。有任何票、突破形态或截图，随时甩群里！</div>
+      </div>
+      <div class="msg-row">
+        <div class="msg-author" style="color: #ffb800;">
+          <span>🛡️ 磐石</span><span class="msg-tag" style="background: rgba(255,184,0,0.15); color:#ffb800;">红利</span>
+        </div>
+        <div class="msg-bubble">千里马你悠着点。今天大盘情绪虽然活跃，但估值与安全边际还没到激进时刻，底仓防守闸门必须锁好。</div>
+      </div>
+    </div>
+
+    <!-- 剪贴板/上传待发图片缩略图 -->
+    <div class="image-preview-bar" id="image-preview-bar">
+      <img id="image-preview-img" src="" alt="预览">
+      <span style="flex: 1; color: var(--primary);">已加载走势截图 (支持多模态分析)</span>
+      <button class="chat-mini-btn" id="btn-cancel-image">移除</button>
+    </div>
+
+    <!-- 发送控制区 -->
+    <div class="group-input-box">
+      <div class="input-row">
+        <label class="icon-btn" title="上传K线图/走势截图 (也支持直接 Ctrl+V / ⌘+V 粘贴截图！)">
+          📷
+          <input type="file" id="group-image-file" accept="image/*" style="display: none;">
+        </label>
+        <input type="text" id="group-chat-input" placeholder="在群里发言，或直接按 Ctrl+V 粘贴走势图...">
+        <button class="chat-send-btn" id="group-chat-send">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 交易员长期记忆库弹窗 (查看 self_note & commitment) -->
+  <div class="memory-modal" id="memory-modal">
+    <div class="drawer-header">
+      <div class="trader-title-box">
+        <h3>🧠 交易员长期记忆库</h3>
+        <span class="trader-tag" style="background: rgba(181, 55, 242, 0.2); color: #d946ef;">跨轮次持久化</span>
+      </div>
+      <button class="drawer-close" id="btn-memory-close">&times;</button>
+    </div>
+
+    <div style="font-size: 12px; color: var(--text-muted);">
+      系统自动为每位交易员维护 <code>self_note</code>（复盘体会）与 <code>commitment</code>（盯盘承诺），杜绝每天说车轱辘话。
+    </div>
+
+    <div class="memory-grid" id="memory-grid">
+      <!-- 动态填充 -->
+    </div>
+  </div>
+
+  <!-- 底部状态栏 -->
+  <div class="bottom-bar">
+    <div class="trader-status-pills">
+      <div class="trader-pill" data-trader="trader_1"><div class="status-dot"></div>千里马·短线</div>
+      <div class="trader-pill" data-trader="trader_2"><div class="status-dot"></div>天平·均衡</div>
+      <div class="trader-pill" data-trader="trader_3"><div class="status-dot"></div>磐石·红利</div>
+      <div class="trader-pill" data-trader="trader_4"><div class="status-dot"></div>远见·消费医药</div>
+      <div class="trader-pill" data-trader="trader_5"><div class="status-dot"></div>逆风·逆向</div>
+      <div class="trader-pill" data-trader="trader_6"><div class="status-dot"></div>乘风·周期</div>
+    </div>
+    <div class="bottom-actions">
+      <button class="action-btn" id="btn-group-chat" style="background: rgba(0, 240, 255, 0.2); border-color: var(--primary); font-weight: 600;">💬 七人群聊</button>
+      <button class="action-btn" id="btn-memory-view">🧠 交易员记忆库</button>
+      <button class="action-btn" id="btn-roof">🏠 掀开屋顶</button>
+      <button class="action-btn" id="btn-night-mode">🌙 看盘模式 (赛博暗光)</button>
+      <label class="action-btn" style="cursor: pointer;">
+        📂 载入本地简报
+        <input type="file" id="file-loader" accept=".json" style="display: none;">
+      </label>
+    </div>
+  </div>
+
+  <!-- 点击交易员弹出的侧拉抽屉 -->
+  <div class="trader-drawer" id="trader-drawer">
+    <div class="drawer-header">
+      <div class="trader-title-box">
+        <h3 id="drawer-name">千里马</h3>
+        <span class="trader-tag" id="drawer-style" style="background: rgba(0, 240, 255, 0.15); color: #00f0ff;">短线·成长进攻</span>
+      </div>
+      <button class="drawer-close" id="drawer-close-btn">&times;</button>
+    </div>
+
+    <div style="font-size: 12px; color: var(--text-muted);">
+      <div>专属免费源：<strong id="drawer-source" style="color: #fff;">财联社电报 (cls.cn)</strong></div>
+      <div style="margin-top: 4px;">今日盘前倾向：<strong id="drawer-stance" style="color: var(--accent-green);">偏多 (70%)</strong></div>
+    </div>
+
+    <!-- 交易日记卡片 -->
+    <div class="diary-box">
+      <h4><span>📖 最新交易日记</span><span id="diary-time">09:00</span></h4>
+      <p id="drawer-diary-content">隔夜催化我筛过了，重点看科技和算力成长板块的分时量能。情绪分在 +0.15，只要开盘半小时成交额跟上，随时准备抓进攻突破机会！</p>
+    </div>
+
+    <!-- 1v1 私聊模块 -->
+    <div class="chat-box-area">
+      <div style="font-size: 12px; font-weight: 600; color: #fff;">💬 点名问他 (1v1 私聊)</div>
+      <div class="chat-history-log" id="drawer-chat-log">
+        <div class="chat-bubble bubble-trader">你好！我是千里马。有什么短线突破或进攻标的想交流？</div>
+      </div>
+      <div class="chat-input-wrapper">
+        <input type="text" id="drawer-chat-input" placeholder="输入提问，例如：今天半导体能追吗？">
+        <button class="chat-send-btn" id="drawer-chat-send">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">已切换视角</div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // 默认内置真实数据
+    const DEFAULT_BRIEF_DATA = {
+      date: "2026-11-12",
+      lean: "偏多",
+      lean_score: 0.153,
+      divergence: false,
+      sample_count: 26,
+      top_news: [
+        "华尔街紧急上调利率预期！美股最大风险变成美联储？",
+        "算力需求再添硬证据，云服务商上调全年营收",
+        "证监会：进一步拓宽中长期资金来源、渠道和入市方式 全力维护市场平稳运行"
+      ],
+      agents: [
+        { id: "trader_1", name: "千里马", style: "短线·成长进攻", source: "财联社电报", stance: "偏多", conf: "70%", diary: "隔夜催化我筛过了，重点看科技和算力成长板块的分时量能。情绪分在 +0.15，只要开盘半小时成交额跟上，我随时准备抓进攻突破机会！" },
+        { id: "trader_2", name: "天平", style: "中短线·均衡配置", source: "东财全球资讯", stance: "偏多", conf: "80%", diary: "从全市场全局看，今日多空权重比在 18%:3%。宏观环境整体平稳，建议组合保持中短线均衡配置，不要单边押注极端方向。" },
+        { id: "trader_3", name: "磐石", style: "中长线·红利防御", source: "Baostock分红", stance: "偏多", conf: "90%", diary: "红利防御看的是长周期的确定性。今天情绪虽然有催化，但估值与安全边际还没到激进时刻，继续严守防守纪律。" },
+        { id: "trader_4", name: "远见", style: "长线·消费医药", source: "财务三表基本面", stance: "偏多", conf: "65%", diary: "长线关注消费医药的深层逻辑：人口结构老龄化与刚性健康需求是确定的大趋势。短期一两天的消息面波动不改中长线内在价值，保持从容跟踪。" },
+        { id: "trader_5", name: "逆风", style: "中短线·逆向事件", source: "Finnhub全球突发", stance: "偏多", conf: "65%", diary: "情绪账本显示多空分歧度=平稳。大家都在一致预期的时候往往最危险，我反而盯紧那些被利空错杀、砸出黄金坑的逆向机会！" },
+        { id: "trader_6", name: "乘风", style: "中长线·周期弹性", source: "AkShare大宗商品", stance: "偏多", conf: "85%", diary: "周期有它自身的客观规律，春种秋收急不得。隔夜外围大宗商品波动有限，今天中长线周期持仓维持基准跟踪。" }
+      ]
+    };
+
+    let briefData = DEFAULT_BRIEF_DATA;
+
+    // 城市配置
+    const CITY_PROFILES = {
+      new_york: { name: "纽约 (50F)", weather: "阴天 10°C", market: "美股 盘前", skyColor: 0x070c18 },
+      beijing: { name: "北京 (国贸)", weather: "晴朗 11°C", market: "A股 盘后", skyColor: 0x081022 },
+      washington: { name: "华盛顿 (白宫)", weather: "晴 10.8°C", market: "政策观察", skyColor: 0x080f1e },
+      hangzhou: { name: "杭州 (西湖)", weather: "多云 18.8°C", market: "数字经济", skyColor: 0x091428 },
+      mulan: { name: "木兰 (江畔)", weather: "微寒 4.2°C", market: "自然休整", skyColor: 0x050810 }
+    };
+    let currentCity = "new_york";
+
+    let scene, camera, renderer, controls;
+    let roomGroup, skyscrapersGroup, tradersGroup = [];
+    let bigScreenMesh, roofMesh;
+    let deskLamps = [];
+    let ambientLight, mainLight, screenLight;
+    let isRoofOpen = false;
+    let isNightMode = false;
+    let isAutoRotate = false;
+    let raycaster = new THREE.Raycaster();
+    let mouse = new THREE.Vector2();
+
+    async function loadLatestBriefData() {
+      try {
+        const res = await fetch("data/brief_latest.json?t=" + Date.now());
+        if (res.ok) {
+          const json = await res.json();
+          briefData.date = json.date || briefData.date;
+          briefData.lean = json.lean || briefData.lean;
+          briefData.lean_score = json.lean_score || briefData.lean_score;
+          if (json.top_news && json.top_news.length > 0) briefData.top_news = json.top_news;
+          if (json.agents && json.agents.length > 0) {
+            briefData.agents.forEach((ag, idx) => {
+              if (json.agents[idx]) {
+                ag.diary = json.agents[idx].summary || json.agents[idx].content || ag.diary;
+                ag.stance = json.agents[idx].stance || json.agents[idx].lean || ag.stance;
+              }
+            });
+          }
+          updateBigScreenCanvas();
+        }
+      } catch (err) {
+        console.log("使用内置基准数据初始化");
+      }
+    }
+
+    function initScene() {
+      const container = document.getElementById("canvas-container");
+      
+      scene = new THREE.Scene();
+      const city = CITY_PROFILES[currentCity];
+      scene.background = new THREE.Color(city.skyColor);
+
+      // 相机设置：经典等距切角视角，适度拉近使工作室充盈画面
+      const aspect = window.innerWidth / window.innerHeight;
+      camera = new THREE.PerspectiveCamera(32, aspect, 0.1, 1000);
+      
+      // 经典等距观察机位：从正前偏右上方俯瞰房间内部
+      camera.position.set(15, 12, 15);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.target.set(0, 1.2, 0);
+
+      // 限制旋转角度：锁定在前半球 140° 范围内，严禁转到后墙外看见黑墙！
+      controls.minPolarAngle = Math.PI / 6;       // 约 30 度
+      controls.maxPolarAngle = Math.PI / 2.3;     // 约 78 度，绝不潜入地面下
+      controls.minAzimuthAngle = -Math.PI / 6;    // 左限位
+      controls.maxAzimuthAngle = Math.PI / 1.7;   // 右限位
+      controls.minDistance = 7;
+      controls.maxDistance = 35;
+
+      setupLighting();
+      buildRoom();
+      buildSkyscrapers();
+      buildWorkstations();
+      buildBigScreenWall();
+
+      window.addEventListener("resize", onWindowResize);
+      window.addEventListener("pointerdown", onPointerDown);
+
+      animate();
+    }
+
+    // 采光系统：明亮且富含科技层次，绝不发黑
+    function setupLighting() {
+      // 柔和环境光，保证所有背光面依然清晰可见
+      ambientLight = new THREE.AmbientLight(0xffffff, 1.6);
+      scene.add(ambientLight);
+
+      // 主阳光/天光方向光
+      mainLight = new THREE.DirectionalLight(0xfff5e4, 2.2);
+      mainLight.position.set(10, 20, 12);
+      mainLight.castShadow = true;
+      mainLight.shadow.mapSize.width = 2048;
+      mainLight.shadow.mapSize.height = 2048;
+      mainLight.shadow.bias = -0.0004;
+      const d = 10;
+      mainLight.shadow.camera.left = -d;
+      mainLight.shadow.camera.right = d;
+      mainLight.shadow.camera.top = d;
+      mainLight.shadow.camera.bottom = -d;
+      scene.add(mainLight);
+
+      // 辅助冷色补充光
+      const fillLight = new THREE.DirectionalLight(0x73b4ff, 1.0);
+      fillLight.position.set(-10, 15, -10);
+      scene.add(fillLight);
+
+      // 大屏幕前置点光源
+      screenLight = new THREE.PointLight(0x00f0ff, 2.5, 14);
+      screenLight.position.set(0, 3.2, -4.5);
+      scene.add(screenLight);
+    }
+
+    // 构建房间结构：等距透视剖面盒 (Cutaway Diorama)
+    // 规则：前方与右侧彻底开放无墙，仅保留后侧背景墙与左侧落地窗！
+    function buildRoom() {
+      roomGroup = new THREE.Group();
+
+      // 1. 实木/板岩复合地板 (12 x 12)
+      const floorGeo = new THREE.BoxGeometry(12, 0.3, 12);
+      const floorMat = new THREE.MeshStandardMaterial({
+        color: 0x1f293d,
+        roughness: 0.25,
+        metalness: 0.2
+      });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.position.y = -0.15;
+      floor.receiveShadow = true;
+      roomGroup.add(floor);
+
+      // 地板细网格
+      const grid = new THREE.GridHelper(12, 12, 0x3d4f72, 0x222e44);
+      grid.position.y = 0.01;
+      roomGroup.add(grid);
+
+      // 地板前沿发光霓虹边缘
+      const neonBorderMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+      const borderF = new THREE.Mesh(new THREE.BoxGeometry(12.1, 0.04, 0.06), neonBorderMat);
+      borderF.position.set(0, 0.02, 6.03);
+      roomGroup.add(borderF);
+      const borderR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 12.1), neonBorderMat);
+      borderR.position.set(6.03, 0.02, 0);
+      roomGroup.add(borderR);
+
+      // 2. 后背景墙 (Z = -6.0)
+      // 注意：后墙高度设为 4.8，表面朝向正 Z（面对镜头），大屏挂在其上
+      const backWallMat = new THREE.MeshStandardMaterial({ color: 0x141b2a, roughness: 0.7 });
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(12.0, 4.8, 0.2), backWallMat);
+      backWall.position.set(0, 2.4, -6.0);
+      backWall.receiveShadow = true;
+      roomGroup.add(backWall);
+
+      // 3. 左侧全景落地窗 (X = -6.0)
+      // 采用透明玻璃材质，透过它能直接看到窗外的 NYC 天际线！
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0x88ccff,
+        transparent: true,
+        opacity: 0.2,
+        roughness: 0.05,
+        transmission: 0.9,
+        thickness: 0.3
+      });
+      const leftWindow = new THREE.Mesh(new THREE.BoxGeometry(0.08, 4.4, 11.6), glassMat);
+      leftWindow.position.set(-5.96, 2.4, 0);
+      roomGroup.add(leftWindow);
+
+      // 落地窗黑色立柱框
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x090d16, metalness: 0.8 });
+      for (let z = -5.8; z <= 5.8; z += 2.9) {
+        const col = new THREE.Mesh(new THREE.BoxGeometry(0.16, 4.8, 0.12), frameMat);
+        col.position.set(-6.0, 2.4, z);
+        roomGroup.add(col);
+      }
+
+      // 4. 屋顶梁柱结构 (可掀开)
+      roofMesh = new THREE.Group();
+      for (let x = -5; x <= 5; x += 2.5) {
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.35, 12.2), frameMat);
+        beam.position.set(x, 4.7, 0);
+        roofMesh.add(beam);
+      }
+      roomGroup.add(roofMesh);
+
+      // 5. 休闲角落 (现代转角皮沙发、大理石茶几、绿植)
+      buildLounge(roomGroup);
+
+      scene.add(roomGroup);
+    }
+
+    // 休闲角
+    function buildLounge(group) {
+      const couchMat = new THREE.MeshStandardMaterial({ color: 0x2b211a, roughness: 0.5 });
+      const sofa = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.4, 1.0), couchMat);
+      sofa.position.set(-4.5, 0.3, 4.5);
+      sofa.castShadow = true;
+      group.add(sofa);
+
+      const sofaBack = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.7, 0.25), couchMat);
+      sofaBack.position.set(-4.5, 0.65, 5.05);
+      sofaBack.castShadow = true;
+      group.add(sofaBack);
+
+      const tableMat = new THREE.MeshStandardMaterial({ color: 0x0c111c, roughness: 0.2, metalness: 0.6 });
+      const coffeeTable = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 0.7), tableMat);
+      coffeeTable.position.set(-4.5, 0.2, 3.2);
+      group.add(coffeeTable);
+
+      // 绿植
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.18, 0.5, 16), new THREE.MeshStandardMaterial({ color: 0x3d4a63 }));
+      pot.position.set(-5.2, 0.25, -5.0);
+      group.add(pot);
+
+      const plantMat = new THREE.MeshStandardMaterial({ color: 0x278a4c, roughness: 0.5 });
+      for (let i = 0; i < 5; i++) {
+        const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), plantMat);
+        leaf.scale.set(1.2, 0.25, 0.8);
+        leaf.rotation.set(0.3 * i, 0.8 * i, 0.4);
+        leaf.position.set(-5.2 + Math.sin(i) * 0.12, 0.6 + i * 0.08, -5.0 + Math.cos(i) * 0.12);
+        group.add(leaf);
+      }
+    }
+
+    // 窗外摩天楼群：全部布置在左落地窗外 (X < -7) 与后墙外 (Z < -8)
+    // 镜头正前方绝对零遮挡！
+    function buildSkyscrapers() {
+      skyscrapersGroup = new THREE.Group();
+
+      const winCanvas = document.createElement("canvas");
+      winCanvas.width = 128;
+      winCanvas.height = 256;
+      const ctx = winCanvas.getContext("2d");
+      ctx.fillStyle = "#0c1527";
+      ctx.fillRect(0, 0, 128, 256);
+
+      for (let y = 6; y < 250; y += 10) {
+        for (let x = 6; x < 120; x += 9) {
+          if (Math.random() > 0.35) {
+            ctx.fillStyle = Math.random() > 0.85 ? "#ffb800" : (Math.random() > 0.5 ? "#00f0ff" : "#fff8e7");
+            ctx.fillRect(x, y, 5, 7);
+          }
+        }
+      }
+      const bldgTex = new THREE.CanvasTexture(winCanvas);
+      bldgTex.wrapS = THREE.RepeatWrapping;
+      bldgTex.wrapT = THREE.RepeatWrapping;
+      bldgTex.repeat.set(1, 3);
+
+      const bldgMat = new THREE.MeshStandardMaterial({
+        color: 0x1b2840,
+        roughness: 0.35,
+        metalness: 0.5,
+        map: bldgTex,
+        emissive: 0x081224,
+        emissiveIntensity: 0.6
+      });
+
+      // 仅在左侧窗外与后侧布置楼宇
+      const buildings = [
+        // 左窗外大厦 (X: -10 到 -25)
+        { x: -10, z: -3, w: 3.8, d: 3.8, h: 22 },
+        { x: -12, z: 2,  w: 4.2, d: 4.2, h: 28 },
+        { x: -11, z: 7,  w: 3.5, d: 3.5, h: 18 },
+        { x: -18, z: -1, w: 5.5, d: 5.5, h: 36 },
+        { x: -16, z: 6,  w: 4.5, d: 4.5, h: 25 },
+        // 后墙外远景楼群 (Z: -10 到 -22)
+        { x: -4,  z: -12, w: 4.0, d: 4.0, h: 24 },
+        { x: 3,   z: -14, w: 5.0, d: 5.0, h: 32 },
+        { x: -2,  z: -18, w: 6.0, d: 6.0, h: 42 }
+      ];
+
+      buildings.forEach(b => {
+        const geo = new THREE.BoxGeometry(b.w, b.h, b.d);
+        const mesh = new THREE.Mesh(geo, bldgMat);
+        mesh.position.set(b.x, b.h / 2 - 2, b.z);
+        skyscrapersGroup.add(mesh);
+
+        const redLight = new THREE.Mesh(
+          new THREE.SphereGeometry(0.1, 8, 8),
+          new THREE.MeshBasicMaterial({ color: 0xff1144 })
+        );
+        redLight.position.set(b.x, b.h - 1.8, b.z);
+        skyscrapersGroup.add(redLight);
+      });
+
+      scene.add(skyscrapersGroup);
+    }
+
+    // 构建 6 个交易员工位与角色
+    function buildWorkstations() {
+      const positions = [
+        // 前排 (靠近大屏与主要活动区)
+        { id: "trader_1", x: -2.6, z: -1.4, color: 0x00f0ff }, // 千里马·短线 (青蓝)
+        { id: "trader_2", x: 0.3,  z: -1.4, color: 0x70d6ff }, // 天平·均衡 (亮蓝)
+        { id: "trader_3", x: 3.2,  z: -1.4, color: 0xffb800 }, // 磐石·红利 (暖金)
+        // 后排
+        { id: "trader_4", x: -2.6, z: 2.0,  color: 0x00ff88 }, // 远见·消费医药 (翡翠绿)
+        { id: "trader_5", x: 0.3,  z: 2.0,  color: 0xd946ef }, // 逆风·逆向 (洋红)
+        { id: "trader_6", x: 3.2,  z: 2.0,  color: 0xf97316 }  // 乘风·周期 (亮橙)
+      ];
+
+      positions.forEach((p, idx) => {
+        const agentData = briefData.agents[idx];
+        const deskGroup = new THREE.Group();
+        deskGroup.position.set(p.x, 0, p.z);
+
+        // 1. 实木胡桃黑钢办公桌 (宽 1.9, 高 0.85, 深 0.9)
+        const deskMat = new THREE.MeshStandardMaterial({ color: 0x222d42, roughness: 0.3 });
+        const deskTop = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.07, 0.9), deskMat);
+        deskTop.position.y = 0.85;
+        deskTop.castShadow = true;
+        deskTop.receiveShadow = true;
+        deskGroup.add(deskTop);
+
+        const legMat = new THREE.MeshStandardMaterial({ color: 0x0a0f1a, metalness: 0.8 });
+        const legs = [[-0.85, 0.42, -0.38], [0.85, 0.42, -0.38], [-0.85, 0.42, 0.38], [0.85, 0.42, 0.38]];
+        legs.forEach(lp => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.85), legMat);
+          leg.position.set(lp[0], lp[1], lp[2]);
+          deskGroup.add(leg);
+        });
+
+        // 2. 宽屏显示器 (高对比度真实微型走势)
+        const screenCanvas = createMonitorCanvas(agentData.name, agentData.style, p.color);
+        const screenTexture = new THREE.CanvasTexture(screenCanvas);
+        const screenMat = new THREE.MeshBasicMaterial({ map: screenTexture });
+        const screen = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.55, 0.03), screenMat);
+        screen.position.set(0, 1.25, -0.25);
+        deskGroup.add(screen);
+
+        const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.38), legMat);
+        stand.position.set(0, 1.02, -0.25);
+        deskGroup.add(stand);
+
+        // 键盘
+        const kb = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.18), legMat);
+        kb.position.set(0, 0.89, 0.08);
+        deskGroup.add(kb);
+
+        // 3. 办公椅
+        const chairMat = new THREE.MeshStandardMaterial({ color: 0x141c2b, roughness: 0.6 });
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.06, 0.65), chairMat);
+        seat.position.set(0, 0.56, 0.55);
+        deskGroup.add(seat);
+
+        const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.7, 0.06), chairMat);
+        chairBack.position.set(0, 0.94, 0.84);
+        deskGroup.add(chairBack);
+
+        // 4. 交易员小人模型 (Low-poly Stylized Avatar)
+        const avatarGroup = new THREE.Group();
+        avatarGroup.position.set(0, 0.56, 0.52);
+
+        // 身体
+        const bodyMat = new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.35 });
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.52, 16), bodyMat);
+        body.position.y = 0.28;
+        body.castShadow = true;
+        avatarGroup.add(body);
+
+        // 头部
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xf6d3b8, roughness: 0.6 });
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 16), headMat);
+        head.position.y = 0.65;
+        head.castShadow = true;
+        avatarGroup.add(head);
+
+        // 发型
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0x111622 });
+        const hair = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), hairMat);
+        hair.position.y = 0.67;
+        avatarGroup.add(hair);
+
+        // 手臂
+        const armMat = new THREE.MeshStandardMaterial({ color: p.color });
+        const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.28, 0.07), armMat);
+        leftArm.position.set(-0.25, 0.35, -0.16);
+        leftArm.rotation.x = Math.PI / 3;
+        avatarGroup.add(leftArm);
+
+        const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.28, 0.07), armMat);
+        rightArm.position.set(0.25, 0.35, -0.16);
+        rightArm.rotation.x = Math.PI / 3;
+        avatarGroup.add(rightArm);
+
+        // 交易员头顶 3D 全息身份标签 (Billboard Sprite，任何角度清晰可读！)
+        const tagSprite = createTraderHoloTag(agentData.name, agentData.style, p.color);
+        tagSprite.position.set(0, 1.15, 0);
+        avatarGroup.add(tagSprite);
+
+        deskGroup.add(avatarGroup);
+
+        // 点击检测不可见包围盒
+        const hitBox = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.8, 1.8), new THREE.MeshBasicMaterial({ visible: false }));
+        hitBox.position.set(0, 0.8, 0.2);
+        hitBox.userData = { traderId: p.id, index: idx };
+        deskGroup.add(hitBox);
+
+        // 地面呼吸光环
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.95, 1.05, 32),
+          new THREE.MeshBasicMaterial({ color: p.color, side: THREE.DoubleSide, transparent: true, opacity: 0.4 })
+        );
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 0.02;
+        deskGroup.add(ring);
+
+        // 工位暖光小台灯
+        const lamp = new THREE.PointLight(p.color, 1.4, 3.8);
+        lamp.position.set(0.7, 1.15, -0.12);
+        deskGroup.add(lamp);
+        deskLamps.push(lamp);
+
+        scene.add(deskGroup);
+        tradersGroup.push({ group: deskGroup, hitBox, avatar: avatarGroup, ring, light: lamp, id: p.id });
+      });
+    }
+
+    // 生成头顶全息标签
+    function createTraderHoloTag(name, style, colorHex) {
+      const c = document.createElement("canvas");
+      c.width = 256;
+      c.height = 70;
+      const ctx = c.getContext("2d");
+
+      ctx.fillStyle = "rgba(7, 12, 22, 0.88)";
+      ctx.strokeStyle = "#" + colorHex.toString(16).padStart(6, '0');
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(10, 10, 236, 50, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 20px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(name + " · " + style.split("·")[1] || style, 128, 42);
+
+      const texture = new THREE.CanvasTexture(c);
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(1.4, 0.4, 1.0);
+      return sprite;
+    }
+
+    // 绘制工位显示屏微型 K 线
+    function createMonitorCanvas(name, style, colorHex) {
+      const c = document.createElement("canvas");
+      c.width = 300;
+      c.height = 140;
+      const ctx = c.getContext("2d");
+
+      ctx.fillStyle = "#070b14";
+      ctx.fillRect(0, 0, 300, 140);
+
+      ctx.fillStyle = "#" + colorHex.toString(16).padStart(6, '0');
+      ctx.fillRect(0, 0, 300, 24);
+
+      ctx.fillStyle = "#000000";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText(name + " · " + style, 10, 17);
+
+      for (let i = 0; i < 22; i++) {
+        const x = 15 + i * 12;
+        const isUp = Math.random() > 0.4;
+        const barH = 15 + Math.random() * 38;
+        const y = 85 - (isUp ? barH : -barH / 2);
+        ctx.fillStyle = isUp ? "#00ff88" : "#ff3366";
+        ctx.fillRect(x, y, 8, Math.max(4, barH));
+      }
+
+      ctx.fillStyle = "#8b9bb4";
+      ctx.font = "11px monospace";
+      ctx.fillText("LIVE QUANT RADAR ● OK", 10, 128);
+
+      return c;
+    }
+
+    // 构建居中大屏幕墙 (后墙中央 X: 0, Z: -5.85)
+    function buildBigScreenWall() {
+      const screenCanvas = document.createElement("canvas");
+      screenCanvas.width = 1024;
+      screenCanvas.height = 512;
+      window.bigScreenCanvas = screenCanvas;
+      updateBigScreenCanvas();
+
+      const texture = new THREE.CanvasTexture(screenCanvas);
+      window.bigScreenTexture = texture;
+
+      // 宽 8.5, 高 3.6，气派居中！
+      const screenGeo = new THREE.BoxGeometry(8.5, 3.6, 0.12);
+      const screenMat = new THREE.MeshBasicMaterial({ map: texture });
+      bigScreenMesh = new THREE.Mesh(screenGeo, screenMat);
+      bigScreenMesh.position.set(0, 2.5, -5.88);
+      scene.add(bigScreenMesh);
+    }
+
+    // 更新大屏幕绘制
+    function updateBigScreenCanvas() {
+      const c = window.bigScreenCanvas;
+      if (!c) return;
+      const ctx = c.getContext("2d");
+
+      ctx.fillStyle = "#070c18";
+      ctx.fillRect(0, 0, 1024, 512);
+
+      // 顶部科技蓝高光边
+      ctx.fillStyle = "#00f0ff";
+      ctx.fillRect(0, 0, 1024, 8);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 32px sans-serif";
+      ctx.fillText("HIGHLAND CAPITAL · 盘前决策中枢", 40, 56);
+
+      ctx.fillStyle = "#8b9bb4";
+      ctx.font = "15px monospace";
+      ctx.fillText("DATE: " + briefData.date + " | 6 AGENTS CONSENSUS | SCHEMA: v1", 40, 85);
+
+      // 倾向核心大卡片
+      const isPos = briefData.lean_score > 0;
+      ctx.fillStyle = isPos ? "rgba(0, 255, 136, 0.15)" : "rgba(255, 51, 102, 0.15)";
+      ctx.strokeStyle = isPos ? "#00ff88" : "#ff3366";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(40, 110, 420, 135);
+      ctx.fillRect(40, 110, 420, 135);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "18px sans-serif";
+      ctx.fillText("全市场综合倾向", 65, 145);
+
+      ctx.fillStyle = isPos ? "#00ff88" : "#ff3366";
+      ctx.font = "bold 44px monospace";
+      ctx.fillText(briefData.lean + " (" + (briefData.lean_score > 0 ? "+" : "") + briefData.lean_score.toFixed(3) + ")", 65, 208);
+
+      // 右侧核心指数看板
+      ctx.fillStyle = "#121a2d";
+      ctx.fillRect(485, 110, 495, 135);
+      ctx.fillStyle = "#8b9bb4";
+      ctx.font = "15px sans-serif";
+      ctx.fillText("基准真实大盘行情映射", 505, 140);
+
+      const indices = [
+        { name: "上证", val: "3648.54", chg: "-0.87%", up: false },
+        { name: "深证", val: "11199.15", chg: "-1.67%", up: false },
+        { name: "科创50", val: "1306.60", chg: "+0.48%", up: true }
+      ];
+      indices.forEach((ind, i) => {
+        const x = 505 + i * 160;
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 17px monospace";
+        ctx.fillText(ind.name, x, 180);
+
+        ctx.fillStyle = ind.up ? "#00ff88" : "#ff3366";
+        ctx.font = "17px monospace";
+        ctx.fillText(ind.val, x, 208);
+        ctx.font = "13px monospace";
+        ctx.fillText(ind.chg, x, 228);
+      });
+
+      // 隔夜核心资讯流
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 19px sans-serif";
+      ctx.fillText("隔夜核心 S/A 级宏观要闻摘要:", 40, 288);
+
+      ctx.font = "17px sans-serif";
+      ctx.fillStyle = "#c2d1e8";
+      (briefData.top_news || []).slice(0, 3).forEach((news, idx) => {
+        const text = (idx + 1) + ". " + (news.length > 36 ? news.slice(0, 36) + "..." : news);
+        ctx.fillText(text, 50, 330 + idx * 38);
+      });
+
+      ctx.fillStyle = "rgba(0, 240, 255, 0.8)";
+      ctx.font = "13px monospace";
+      ctx.fillText("● 鼠标点击场景内任意工位即可查看交易员日记与发起 1v1 私聊", 40, 480);
+
+      if (window.bigScreenTexture) {
+        window.bigScreenTexture.needsUpdate = true;
+      }
+    }
+
+    // 交互点击事件 (Raycasting)
+    function onPointerDown(event) {
+      if (event.target.tagName === "BUTTON" || event.target.tagName === "INPUT" || event.target.closest("#trader-drawer")) {
+        return;
+      }
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+
+      const hitMeshes = tradersGroup.map(t => t.hitBox);
+      const intersects = raycaster.intersectObjects(hitMeshes, false);
+
+      if (intersects.length > 0) {
+        const hitObj = intersects[0].object;
+        const traderIdx = hitObj.userData.index;
+        openTraderDrawer(traderIdx);
+      }
+    }
+
+    function openTraderDrawer(index) {
+      const agent = briefData.agents[index];
+      if (!agent) return;
+
+      document.getElementById("drawer-name").textContent = agent.name;
+      document.getElementById("drawer-style").textContent = agent.style;
+      document.getElementById("drawer-source").textContent = agent.source || "专属免费源";
+      document.getElementById("drawer-stance").textContent = agent.stance + " (" + (agent.conf || "70%") + ")";
+      document.getElementById("drawer-diary-content").textContent = agent.diary;
+
+      const log = document.getElementById("drawer-chat-log");
+      log.innerHTML = `<div class="chat-bubble bubble-trader">你好！我是${agent.name}（${agent.style}）。你可以直接问我对盘面、个股突破或防御仓位的看法。</div>`;
+
+      document.getElementById("trader-drawer").classList.add("open");
+
+      const targetPos = tradersGroup[index].group.position;
+      controls.target.set(targetPos.x, 1.0, targetPos.z);
+    }
+
+    document.getElementById("drawer-close-btn").addEventListener("click", () => {
+      document.getElementById("trader-drawer").classList.remove("open");
+    });
+
+    // 1v1 私聊
+    document.getElementById("drawer-chat-send").addEventListener("click", sendDrawerChat);
+    document.getElementById("drawer-chat-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendDrawerChat();
+    });
+
+    function sendDrawerChat() {
+      const input = document.getElementById("drawer-chat-input");
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+
+      const log = document.getElementById("drawer-chat-log");
+      const userBubble = document.createElement("div");
+      userBubble.className = "chat-bubble bubble-user";
+      userBubble.textContent = text;
+      log.appendChild(userBubble);
+
+      const currentName = document.getElementById("drawer-name").textContent;
+      setTimeout(() => {
+        const traderBubble = document.createElement("div");
+        traderBubble.className = "chat-bubble bubble-trader";
+        
+        let reply = "在当前" + briefData.lean + "环境下，保持既定策略最稳健。所有研判只作量化参考，坚决不下指令！";
+        if (currentName.includes("千里马")) {
+          reply = "短线不等人！只要放量突破我就右侧跟进，没有成交量配合就是假突破，严格设好止损！";
+        } else if (currentName.includes("磐石")) {
+          reply = "任凭盘面怎么躁动，本金安全第一位！高股息红利底仓绝对不动，防御闸门锁死！";
+        } else if (currentName.includes("逆风")) {
+          reply = "大家都在盲目追捧的时候反而要小心，我更在乎有没有被利空极端错杀的低吸机会。";
+        }
+        traderBubble.textContent = reply;
+        log.appendChild(traderBubble);
+        log.scrollTop = log.scrollHeight;
+      }, 450);
+
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // 掀开屋顶
+    document.getElementById("btn-roof").addEventListener("click", (e) => {
+      isRoofOpen = !isRoofOpen;
+      roofMesh.visible = !isRoofOpen;
+      e.target.textContent = isRoofOpen ? "🏠 盖上屋顶" : "🏠 掀开屋顶";
+      showToast(isRoofOpen ? "已掀开屋顶（天光通透）" : "已合上屋顶");
+    });
+
+    // 看盘模式：赛博暗光模式（绝不死黑，而是将大屏与显示器亮度拉满，形成赛博霓虹对比！）
+    document.getElementById("btn-night-mode").addEventListener("click", (e) => {
+      isNightMode = !isNightMode;
+      ambientLight.intensity = isNightMode ? 0.6 : 1.6;
+      mainLight.intensity = isNightMode ? 0.8 : 2.2;
+      screenLight.intensity = isNightMode ? 4.0 : 2.5;
+      deskLamps.forEach(l => l.intensity = isNightMode ? 2.5 : 1.4);
+      scene.background.set(isNightMode ? 0x03050a : CITY_PROFILES[currentCity].skyColor);
+      e.target.textContent = isNightMode ? "☀️ 常规采光" : "🌙 看盘模式 (赛博暗光)";
+      showToast(isNightMode ? "已开启赛博暗光看盘模式" : "已恢复常规室内采光");
+    });
+
+    // 载入本地简报
+    document.getElementById("file-loader").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const json = JSON.parse(evt.target.result);
+          briefData = json;
+          updateBigScreenCanvas();
+          showToast("已成功载入 " + (json.date || "本地") + " 简报！");
+        } catch (err) {
+          showToast("JSON 解析失败: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // 视角预设切换 (参数经过严密测算，保证房间充盈屏幕中央且无任何遮挡)
+    const viewButtons = {
+      "view-iso": () => { setCameraPos(15, 12, 15, 0, 1.2, 0); isAutoRotate = false; },
+      "view-radar": () => { setCameraPos(0.01, 20, 0.01, 0, 0, 0); isAutoRotate = false; },
+      "view-close": () => { setCameraPos(7.5, 5.5, 7.5, 0, 1.0, 0); isAutoRotate = false; },
+      "view-auto": () => { isAutoRotate = !isAutoRotate; showToast(isAutoRotate ? "开启自动慢游" : "关闭自动慢游"); }
+    };
+
+    Object.keys(viewButtons).forEach(id => {
+      document.getElementById(id).addEventListener("click", (e) => {
+        document.querySelectorAll(".view-btn").forEach(b => b.classList.remove("active"));
+        if (id === "view-auto") {
+          if (isAutoRotate) e.target.classList.add("active");
+        } else {
+          e.target.classList.add("active");
+        }
+        viewButtons[id]();
+      });
+    });
+
+    function setCameraPos(x, y, z, tx, ty, tz) {
+      camera.position.set(x, y, z);
+      controls.target.set(tx, ty, tz);
+    }
+
+    // 城市切换
+    document.querySelectorAll(".city-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        document.querySelectorAll(".city-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentCity = btn.dataset.city;
+        const profile = CITY_PROFILES[currentCity];
+
+        if (!isNightMode) {
+          scene.background.set(profile.skyColor);
+        }
+        document.getElementById("weather-text").textContent = profile.name + " " + profile.weather;
+        document.getElementById("market-display").textContent = profile.market;
+        showToast("已切换至 " + profile.name);
+      });
+    });
+
+    // 底部交易员快速点击
+    document.querySelectorAll(".trader-pill").forEach(p => {
+      p.addEventListener("click", () => {
+        const tId = p.dataset.trader;
+        const idx = briefData.agents.findIndex(a => a.id === tId);
+        if (idx !== -1) openTraderDrawer(idx);
+      });
+    });
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.style.opacity = 1;
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { t.style.opacity = 0; }, 2000);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // ==========================================
+    // 七人群聊、多模态识图与记忆库交互模块
+    // ==========================================
+    let stagedImageBase64 = null;
+
+    // 1. 打开/关闭群聊窗口
+    const groupChatWindow = document.getElementById("group-chat-window");
+    document.getElementById("btn-group-chat").addEventListener("click", () => {
+      groupChatWindow.classList.toggle("open");
+      if (groupChatWindow.classList.contains("open")) {
+        showToast("已打开七人交易室群聊 (支持粘贴/上传走势图)");
+        document.getElementById("group-chat-input").focus();
+      }
+    });
+    document.getElementById("btn-group-close").addEventListener("click", () => {
+      groupChatWindow.classList.remove("open");
+    });
+
+    // 2. 剪贴板图片粘贴识别 (支持直接 Ctrl+V / ⌘+V 粘贴截图！)
+    window.addEventListener("paste", (e) => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (let item of items) {
+        if (item.type.indexOf("image") !== -1) {
+          const file = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            stagedImageBase64 = evt.target.result;
+            showImagePreview(stagedImageBase64);
+            groupChatWindow.classList.add("open");
+            showToast("📷 已检测到剪贴板走势图！输入提问后点击发送即可分析。");
+          };
+          reader.readAsDataURL(file);
+          break;
+        }
+      }
+    });
+
+    // 3. 上传图片文件
+    document.getElementById("group-image-file").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        stagedImageBase64 = evt.target.result;
+        showImagePreview(stagedImageBase64);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function showImagePreview(base64Url) {
+      document.getElementById("image-preview-img").src = base64Url;
+      document.getElementById("image-preview-bar").style.display = "flex";
+    }
+
+    document.getElementById("btn-cancel-image").addEventListener("click", () => {
+      stagedImageBase64 = null;
+      document.getElementById("image-preview-bar").style.display = "none";
+      document.getElementById("group-image-file").value = "";
+    });
+
+    // 4. 发送群聊消息
+    document.getElementById("group-chat-send").addEventListener("click", sendGroupChat);
+    document.getElementById("group-chat-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendGroupChat();
+    });
+
+    async function sendGroupChat() {
+      const input = document.getElementById("group-chat-input");
+      const text = input.value.trim();
+      const imgB64 = stagedImageBase64;
+
+      if (!text && !imgB64) return;
+      input.value = "";
+      stagedImageBase64 = null;
+      document.getElementById("image-preview-bar").style.display = "none";
+
+      const scrollBox = document.getElementById("group-log-scroll");
+
+      // 渲染用户发言
+      const userRow = document.createElement("div");
+      userRow.className = "msg-row msg-user";
+      let imgHtml = imgB64 ? `<img src="${imgB64}" class="msg-thumb-img" alt="走势图">` : "";
+      userRow.innerHTML = `
+        <div class="msg-author" style="color: var(--primary); justify-content: flex-end;">您 (User)</div>
+        <div class="msg-bubble">${text || "请大家分析这张走势图"}${imgHtml}</div>
+      `;
+      scrollBox.appendChild(userRow);
+      scrollBox.scrollTop = scrollBox.scrollHeight;
+
+      // 尝试调用本地 API 后端
+      try {
+        const resp = await fetch("/api/group_chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text || "请大家分析这张走势图", image_base64: imgB64 })
+        });
+        if (resp.ok) {
+          const res = await resp.json();
+          if (res.replies) {
+            res.replies.forEach(r => appendTraderReply(r.trader_name, r.style, r.reply, r.trader_id));
+            return;
+          }
+        }
+      } catch (err) {
+        console.log("API 连接退回客户端仿真");
+      }
+
+      // 离线/静态前端仿真兜底
+      setTimeout(() => {
+        let t1_reply = "短线关键看分时量能！只要放量突破我就右侧跟进，绝不拖泥带水！";
+        let t3_reply = "大家别急着冲。高股息红利底仓绝对不动，先看下方 MA200 支撑是否稳固！";
+        if (imgB64) {
+          t1_reply = "这根 K 线形态上有放量突破的苗头，关注能不能站稳前高阻力位！短线盈亏比合适的话可以拿底仓试探！";
+          t3_reply = "这形态处于拉升中后段了，上方均线压力沉重。我不建议追高，等回调到强支撑位再看。";
+        }
+        appendTraderReply("千里马", "成长进攻", t1_reply, "trader_1");
+        appendTraderReply("磐石", "红利防御", t3_reply, "trader_3");
+      }, 500);
+    }
+
+    function appendTraderReply(name, style, text, traderId) {
+      const scrollBox = document.getElementById("group-log-scroll");
+      const colorMap = {
+        "千里马": "#00f0ff", "天平": "#70d6ff", "磐石": "#ffb800",
+        "远见": "#00ff88", "逆风": "#d946ef", "乘风": "#f97316"
+      };
+      const col = colorMap[name] || "#00f0ff";
+      const row = document.createElement("div");
+      row.className = "msg-row";
+      row.innerHTML = `
+        <div class="msg-author" style="color: ${col};">
+          <span>${name}</span><span class="msg-tag" style="background: ${col}25; color:${col};">${style}</span>
+        </div>
+        <div class="msg-bubble">${text}</div>
+      `;
+      scrollBox.appendChild(row);
+      scrollBox.scrollTop = scrollBox.scrollHeight;
+    }
+
+    // 5. 偷看模式 (交易员内部自主交锋)
+    document.getElementById("btn-group-peek").addEventListener("click", async () => {
+      showToast("正在偷听交易员内部交锋...");
+      try {
+        const resp = await fetch("/api/peek", { method: "POST" });
+        if (resp.ok) {
+          const res = await resp.json();
+          if (res.replies) {
+            res.replies.forEach(r => appendTraderReply(r.trader_name, r.style, r.reply, r.trader_id));
+            return;
+          }
+        }
+      } catch (err) {}
+
+      // 本地兜底
+      appendTraderReply("逆风", "逆向事件", "大家都看好成长进攻的时候反而要留半个心眼，谨防一致预期瓦解后的假突破！", "trader_5");
+      appendTraderReply("天平", "均衡配置", "我赞同逆风的谨慎，但也不用过度悲观。维持 5:5 均衡底仓，让子弹飞一会儿。", "trader_2");
+    });
+
+    document.getElementById("btn-group-clear").addEventListener("click", () => {
+      document.getElementById("group-log-scroll").innerHTML = "";
+      showToast("已清空聊天记录");
+    });
+
+    // 6. 记忆库弹窗展示 (查看 self_note & commitment)
+    const memoryModal = document.getElementById("memory-modal");
+    document.getElementById("btn-memory-view").addEventListener("click", async () => {
+      await loadAndRenderMemory();
+      memoryModal.classList.add("open");
+    });
+    document.getElementById("btn-memory-close").addEventListener("click", () => {
+      memoryModal.classList.remove("open");
+    });
+
+    async function loadAndRenderMemory() {
+      const grid = document.getElementById("memory-grid");
+      grid.innerHTML = "<div style='color:#8b9bb4;'>正在读取跨轮次长期记忆库...</div>";
+
+      let memData = null;
+      try {
+        const resp = await fetch("/api/memory");
+        if (resp.ok) {
+          const json = await resp.json();
+          memData = json.traders_memory;
+        }
+      } catch (err) {}
+
+      if (!memData) {
+        memData = {
+          trader_1: { name: "千里马", style: "成长进攻", self_note: "分时放量必须伴随行业催化，假突破坚决止损。", commitment: "盯紧 14:30 窗口与半导体龙头承接力。" },
+          trader_2: { name: "天平", style: "均衡配置", self_note: "多空比未失衡前，组合保持适度中立最稳妥。", commitment: "跟踪核心宽基 ETF 回撤与现金比率。" },
+          trader_3: { name: "磐石", style: "红利防御", self_note: "宁可错过脉冲，绝不承担本金回撤。高股息是长跑法宝。", commitment: "死守沪深300 MA200 牛熊分界线。" },
+          trader_4: { name: "远见", style: "消费医药长线", self_note: "好生意的复利需要以年为单位衡量，看淡日内杂音。", commitment: "监控核心创新药管线审批与估值合理分位数。" },
+          trader_5: { name: "逆风", style: "逆向事件", self_note: "别人恐慌我贪婪的前提是利空被充分消化而非真暴雷。", commitment: "搜寻被极端情绪错杀的破净优质品种。" },
+          trader_6: { name: "乘风", style: "周期弹性", self_note: "周期品顺势而为，库存周期启动时爆发力最强。", commitment: "观察上游大宗原料价格拐点与信贷脉冲。" }
+        };
+      }
+
+      grid.innerHTML = "";
+      Object.keys(memData).forEach(tId => {
+        const item = memData[tId];
+        const card = document.createElement("div");
+        card.className = "memory-card";
+        card.innerHTML = `
+          <h5><span>${item.name}</span><span style="color:var(--text-muted);font-weight:400;">${item.style}</span></h5>
+          <div style="margin-bottom:4px;"><strong style="color:#00ff88;">📝 self_note (心得备忘):</strong><br>${item.self_note}</div>
+          <div><strong style="color:#ffb800;">🎯 commitment (盯盘承诺):</strong><br>${item.commitment}</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    let clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const elapsedTime = clock.getElapsedTime();
+
+      // 小人微呼吸与打字起伏动画
+      tradersGroup.forEach((t, i) => {
+        const offset = i * 1.2;
+        t.avatar.position.y = 0.56 + Math.sin(elapsedTime * 2.5 + offset) * 0.012;
+      });
+
+      if (isAutoRotate) {
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.6;
+      } else {
+        controls.autoRotate = false;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    initScene();
+    loadLatestBriefData();
+  </script>
+</body>
+</html>

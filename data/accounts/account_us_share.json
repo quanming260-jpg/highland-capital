@@ -1,0 +1,29 @@
+{
+  "account_id": "virtual_us_share",
+  "market": "美股",
+  "currency": "USD",
+  "cash": 45000.0,
+  "initial_capital": 100000.0,
+  "holdings": [
+    {
+      "symbol": "NVDA",
+      "name": "NVIDIA",
+      "shares": 150,
+      "cost_price": 138.0,
+      "current_price": 145.5,
+      "owner_trader": "trader_1",
+      "sector": "AI硬件"
+    },
+    {
+      "symbol": "AAPL",
+      "name": "Apple",
+      "shares": 120,
+      "cost_price": 220.0,
+      "current_price": 225.0,
+      "owner_trader": "trader_2",
+      "sector": "消费电子"
+    }
+  ],
+  "trade_history": [],
+  "updated_at": "2026-11-12 13:56:46"
+}
